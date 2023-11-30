@@ -189,11 +189,11 @@ def setup_rds():
     print("                          RDS Setup")
     print("=================================================================")
 
-    rds_secret_name = "rds-secret"
     rds_client = get_rds_client()
     secrets_manager_client = get_secrets_manager_client()
 
     if not does_database_exist(rds_client):
+        rds_secret_name = "rds-secret"
         if not does_secret_already_exist(secrets_manager_client, rds_secret_name):
             db_root_password = setup_db_instance(rds_client)
             create_rds_secret(
@@ -324,19 +324,18 @@ def create_db_instance(rds_client):
 
 
 def get_db_root_password_or_generate_one():
-    if DB_ROOT_PASSWORD is None:
-        secrets_manager_client = get_secrets_manager_client()
-
-        return secrets_manager_client.get_random_password(
-            PasswordLength=32,
-            ExcludeNumbers=False,
-            ExcludePunctuation=True,
-            ExcludeUppercase=False,
-            ExcludeLowercase=False,
-            IncludeSpace=False
-        )["RandomPassword"]
-    else:
+    if DB_ROOT_PASSWORD is not None:
         return DB_ROOT_PASSWORD
+    secrets_manager_client = get_secrets_manager_client()
+
+    return secrets_manager_client.get_random_password(
+        PasswordLength=32,
+        ExcludeNumbers=False,
+        ExcludePunctuation=True,
+        ExcludeUppercase=False,
+        ExcludeLowercase=False,
+        IncludeSpace=False
+    )["RandomPassword"]
 
 
 def get_cluster_vpc_ids():
@@ -567,10 +566,7 @@ def get_updated_pipeline_params_env_lines(db_instance_info, pipeline_params_env_
 
 
 def replace_line(line, pattern, new_line):
-    if line.startswith(pattern):
-        return new_line
-    else:
-        return line
+    return new_line if line.startswith(pattern) else line
 
 
 def edit_pipeline_params_env_file(new_pipeline_params_env_lines, pipeline_params_env_file):

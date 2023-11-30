@@ -76,25 +76,23 @@ def extract_bus_data(config):
         data = dict()
         nrows = 0
         index_name = dict()
-        for col_index,col in enumerate(pd_df.columns): 
+        for col_index, col in enumerate(pd_df.columns): 
             index_name[col_index] = col
             values = pd_df[col]['values']
-            
+
             for value in values:
                
                 ts = value[0]
                 row = ts_data(data, ts)
 
-                if row == None:
+                if row is None:
                     row = [np.nan]*len(pd_df.columns)
                     data[ts] = row
                     nrows+=1
-            
+
                 row[col_index] = value[1]
 
-        ts_keys = list(data.keys())
-        ts_keys.sort()
-
+        ts_keys = sorted(data.keys())
         nrows = len(ts_keys)
         print(f"Bus data rows: {nrows}")
 
@@ -102,10 +100,10 @@ def extract_bus_data(config):
         for ts_key in ts_keys:
             row = data[ts_key]
             row_vectors.append(np.array(row, dtype=np.float32).reshape(1, len(row)))
-        
+
         bus_data = np.concatenate(row_vectors, axis=0)
 
-        print(f"Imputing missing data")
+        print("Imputing missing data")
         impute_missing(bus_data, pd_df.columns)
 
         # opening the csv file in 'w+' mode
@@ -113,7 +111,7 @@ def extract_bus_data(config):
         print(f"Writing bus data to {file_path}")
 
         csv_file = open(file_path, 'w+', newline ='')
-  
+
         # writing the data into the file
         with csv_file:    
             csv_writer = csv.writer(csv_file)
@@ -132,7 +130,7 @@ def extract_bus_data(config):
                 csv_writer.writerow(data_row)
 
             csv_file.close()
-    
+
         key = f"{output_prefix}/{file_path.rsplit('/', 1)[1]}"
         print(f"Uploading {file_path} to {key}")
         s3_client.upload_file(file_path, bucket, key)

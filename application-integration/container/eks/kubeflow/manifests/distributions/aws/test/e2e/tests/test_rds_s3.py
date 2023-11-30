@@ -129,7 +129,7 @@ def cfn_stack(metadata, cluster, region, request):
 
 
 KFP_MANIFEST_FOLDER = "../../../../apps/pipeline/upstream/env/aws"
-KFP_PARAMS_ENV_FILE = KFP_MANIFEST_FOLDER + "/params.env"
+KFP_PARAMS_ENV_FILE = f"{KFP_MANIFEST_FOLDER}/params.env"
 
 
 @pytest.fixture(scope="class")
@@ -377,11 +377,11 @@ class TestRDSS3:
             if "artifacts" not in node["outputs"]:
                 continue
 
-            for artifact in node["outputs"]["artifacts"]:
-                if "s3" not in artifact:
-                    continue
-                s3_artifact_keys.append(artifact["s3"]["key"])
-
+            s3_artifact_keys.extend(
+                artifact["s3"]["key"]
+                for artifact in node["outputs"]["artifacts"]
+                if "s3" in artifact
+            )
         bucket_objects = s3_client.list_objects_v2(Bucket=stack_outputs["S3BucketName"])
         content_keys = {content["Key"] for content in bucket_objects["Contents"]}
 

@@ -21,8 +21,7 @@ from selenium.webdriver.chrome.options import Options
 def browser():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
-    browser = webdriver.Chrome(chrome_options=chrome_options)
-    return browser
+    return webdriver.Chrome(chrome_options=chrome_options)
 
 def test_complete_app(browser, testing_env_variables):
     browser.implicitly_wait(5)

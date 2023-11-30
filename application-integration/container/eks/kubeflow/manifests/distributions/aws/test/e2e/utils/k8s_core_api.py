@@ -13,5 +13,5 @@ def create_namespace(cluster, region, namespace_name):
     try:
         client.create_namespace(V1Namespace(metadata=dict(name=namespace_name)))
     except ApiException as e:
-        if "Conflict" != e.reason:
+        if e.reason != "Conflict":
             raise e

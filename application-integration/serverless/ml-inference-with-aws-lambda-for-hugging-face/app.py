@@ -33,22 +33,24 @@ class ServerlessHuggingFaceStack(Stack):
 
         # %%
         # iterates through the Python files in the docker directory
-        docker_folder = os.path.dirname(os.path.realpath(__file__)) + "/inference"
+        docker_folder = f"{os.path.dirname(os.path.realpath(__file__))}/inference"
         pathlist = Path(docker_folder).rglob('*.py')
         for path in pathlist:
             base = os.path.basename(path)
             filename = os.path.splitext(base)[0]
             # Lambda Function from docker image
             lambda_.DockerImageFunction(
-                self, filename,
-                code=lambda_.DockerImageCode.from_image_asset(docker_folder,
-                                                              cmd=[
-                                                                  filename+".handler"]
-                                                              ),
+                self,
+                filename,
+                code=lambda_.DockerImageCode.from_image_asset(
+                    docker_folder, cmd=[f"{filename}.handler"]
+                ),
                 memory_size=8096,
                 timeout=Duration.seconds(600),
                 vpc=vpc,
-                filesystem=lambda_.FileSystem.from_efs_access_point(access_point, '/mnt/hf_models_cache'),
+                filesystem=lambda_.FileSystem.from_efs_access_point(
+                    access_point, '/mnt/hf_models_cache'
+                ),
                 environment={"TRANSFORMERS_CACHE": "/mnt/hf_models_cache"},
             )
 

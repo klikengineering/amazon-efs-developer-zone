@@ -47,7 +47,7 @@ def get_s3_client():
         except Exception as e:
             _, _, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)
-            print(str(e))
+            print(e)
 
     assert(s3_client != None)
     return s3_client
@@ -65,16 +65,13 @@ def get_s3_resource():
         except Exception as e:
             _, _, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)
-            print(str(e))
+            print(e)
 
     return s3_resource
 
 def random_string(length=16):
-    s = ''
     sel = string.ascii_lowercase + string.ascii_uppercase + string.digits
-    for _ in range(0, length):
-        s += random.choice(sel)
-    return s
+    return ''.join(random.choice(sel) for _ in range(0, length))
 
 def is_close_msg(json_msg):
     close = False
@@ -122,23 +119,26 @@ def validate_data_request(request):
 
 def create_manifest(request=None, dbconfig=None, sensor_id=None):
 
-    if sensor_id == 'bus':
-        manifest = BusDataset(dbconfig=dbconfig, 
-                        vehicle_id=request["vehicle_id"],
-                        scene_id=request["scene_id"],
-                        start_ts=int(request["start_ts"]), 
-                        stop_ts=int(request["stop_ts"]),
-                        step=int(request["step"]))
-    else:
-        manifest = ManifestDataset(dbconfig=dbconfig, 
-                        vehicle_id=request["vehicle_id"],
-                        scene_id=request["scene_id"],
-                        sensor_id=sensor_id,
-                        start_ts=int(request["start_ts"]), 
-                        stop_ts=int(request["stop_ts"]),
-                        step=int(request["step"]))
-
-    return manifest
+    return (
+        BusDataset(
+            dbconfig=dbconfig,
+            vehicle_id=request["vehicle_id"],
+            scene_id=request["scene_id"],
+            start_ts=int(request["start_ts"]),
+            stop_ts=int(request["stop_ts"]),
+            step=int(request["step"]),
+        )
+        if sensor_id == 'bus'
+        else ManifestDataset(
+            dbconfig=dbconfig,
+            vehicle_id=request["vehicle_id"],
+            scene_id=request["scene_id"],
+            sensor_id=sensor_id,
+            start_ts=int(request["start_ts"]),
+            stop_ts=int(request["stop_ts"]),
+            step=int(request["step"]),
+        )
+    )
 
 def fsx_read_image(data_store=None, id=None, img_path=None, image_data=None):
     ''' read image file from fsx file system '''

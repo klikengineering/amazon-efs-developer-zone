@@ -237,13 +237,14 @@ def format_operation_response(result, error_message):
     payload = json.loads(payload_encoded.read().decode("utf-8"))
 
     if status == 200:
-        response = payload
-    else:
-        app.log.error(payload)
-        response = ChaliceViewError('{message}: \
-            {payload}'.format(message=error_message, payload=payload))
-
-    return response
+        return payload
+    app.log.error(payload)
+    return ChaliceViewError(
+        '{message}: \
+            {payload}'.format(
+            message=error_message, payload=payload
+        )
+    )
 
 
 # Routes
@@ -380,14 +381,13 @@ def delete_filesystem_lambda(filesystem_id):
     :raises ChaliceViewError, BadRequestError
     """
     stack_status = describe_manager_stack(filesystem_id)
-    if stack_status['Stacks'][0]['StackStatus'] == 'CREATE_COMPLETE':
-        try:
-            delete_stack = delete_manager_stack(filesystem_id)
-            app.log.info(delete_stack)
-        except Exception as error:
-            raise ChaliceViewError(error)
-    else:
+    if stack_status['Stacks'][0]['StackStatus'] != 'CREATE_COMPLETE':
         raise BadRequestError('No valid managed stack for this filesystem')
+    try:
+        delete_stack = delete_manager_stack(filesystem_id)
+        app.log.info(delete_stack)
+    except Exception as error:
+        raise ChaliceViewError(error)
 
 
 @app.route('/objects/{filesystem_id}/upload', methods=["POST"], cors=True, authorizer=AUTHORIZER)
@@ -440,24 +440,17 @@ def download(filesystem_id):
         app.log.error('Missing required query param: {e}'.format(e=error))
         raise BadRequestError('Missing required query param: {e}'.format(e=error))
     else:
-        if 'dzchunkindex' and 'dzchunkbyteoffset' in app.current_request.query_params:
+        if 'dzchunkbyteoffset' in app.current_request.query_params:
             chunk_index = app.current_request.query_params['dzchunkindex']
             chunk_offset = app.current_request.query_params['dzchunkbyteoffset']
             filemanager_event = {"operation": "download", "path": path, "filename": filename, \
                                  "chunk_data": {"dzchunkindex": int(chunk_index), \
                                      "dzchunkbyteoffset": int(chunk_offset)}}
-            operation_result = proxy_operation_to_efs_lambda(filesystem_id, filemanager_event)
-            payload_encoded = operation_result['Payload']
-            payload = json.loads(payload_encoded.read().decode("utf-8"))
-            return payload
-        elif 'dzchunkindex' and 'dzchunkbyteoffset' not in app.current_request.query_params:
-            filemanager_event = {"operation": "download", "path": path, "filename": filename}
-            operation_result = proxy_operation_to_efs_lambda(filesystem_id, filemanager_event)
-            payload_encoded = operation_result['Payload']
-            payload = json.loads(payload_encoded.read().decode("utf-8"))
-            return payload
         else:
-            raise BadRequestError('Unsupported or missing query params')
+            filemanager_event = {"operation": "download", "path": path, "filename": filename}
+        operation_result = proxy_operation_to_efs_lambda(filesystem_id, filemanager_event)
+        payload_encoded = operation_result['Payload']
+        return json.loads(payload_encoded.read().decode("utf-8"))
 
 
 @app.route('/objects/{filesystem_id}/dir', methods=['POST'], cors=True, authorizer=AUTHORIZER)

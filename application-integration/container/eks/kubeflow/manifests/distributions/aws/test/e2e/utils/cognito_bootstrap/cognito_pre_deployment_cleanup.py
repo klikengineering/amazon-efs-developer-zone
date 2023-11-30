@@ -19,7 +19,7 @@ def delete_userpool(
     domain_cert_arn: str,
     region: str,
 ) -> None:
-    userpool_domain = "auth." + domain
+    userpool_domain = f"auth.{domain}"
     userpool_id = userpool_arn.split("/")[-1]
     userpool_cloudfront_alias = domain_alias
     cognito_userpool = CustomDomainCognitoUserPool(
@@ -92,18 +92,18 @@ def delete_cognito_dependency_resources(cfg: dict):
                 hosted_zone_id=root_domain_hosted_zone_id,
                 subdomain_hosted_zone=subdomain_hosted_zone,
             )
-            root_cert_arn = cfg["route53"]["rootDomain"].get("certARN", None)
-            if root_cert_arn:
+            if root_cert_arn := cfg["route53"]["rootDomain"].get(
+                "certARN", None
+            ):
                 delete_cert(acm_certificate=AcmCertificate(arn=root_cert_arn))
 
         subdomain_cert_deployment_region = subdomain_cert_n_virginia = None
         subdomain_cert_deployment_region_arn = cfg["route53"]["subDomain"].get(
-            deployment_region + "-certARN", None
+            f"{deployment_region}-certARN", None
         )
-        subdomain_cert_n_virginia_arn = cfg["route53"]["subDomain"].get(
+        if subdomain_cert_n_virginia_arn := cfg["route53"]["subDomain"].get(
             "us-east-1-certARN", None
-        )
-        if subdomain_cert_n_virginia_arn:
+        ):
             subdomain_cert_deployment_region = (
                 subdomain_cert_n_virginia
             ) = AcmCertificate(arn=subdomain_cert_n_virginia_arn)
@@ -124,9 +124,7 @@ def delete_cognito_dependency_resources(cfg: dict):
                 region=deployment_region,
             )
 
-        # delete ALB
-        alb_dns = cfg["kubeflow"].get("ALBDNS", None)
-        if alb_dns:
+        if alb_dns := cfg["kubeflow"].get("ALBDNS", None):
             delete_alb(alb_dns, deployment_region)
 
         # delete subdomain certs

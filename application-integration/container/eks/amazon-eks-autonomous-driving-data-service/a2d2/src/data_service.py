@@ -57,7 +57,7 @@ class DataService(threading.Thread):
 
             for message in consumer:
                 try:
-                    json_msg = json.loads(message.value) 
+                    json_msg = json.loads(message.value)
                     request = json_msg["request"]
                     self.logger.info("recvd request: {0}".format(request))
                     validate_data_request(request)
@@ -67,13 +67,10 @@ class DataService(threading.Thread):
                         data_store=self.config['data_store'],
                         calibration=self.config['calibration'])
 
-                    if len(tasks) < max_tasks:
-                        tasks.append(t)
-                    else:
+                    if len(tasks) >= max_tasks:
                         oldest=tasks.pop(0)
                         oldest.join()
-                        tasks.append(t)
-
+                    tasks.append(t)
                     assert(len(tasks) <= max_tasks)
                     t.start()
 

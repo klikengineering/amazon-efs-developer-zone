@@ -31,15 +31,17 @@ def send_response(event, context, response_status, response_data):
     """
     Send a resource manipulation status response to CloudFormation
     """
-    response_body = json.dumps({
-        "Status": response_status,
-        "Reason": "See the details in CloudWatch Log Stream: " + context.log_stream_name,
-        "PhysicalResourceId": context.log_stream_name,
-        "StackId": event['StackId'],
-        "RequestId": event['RequestId'],
-        "LogicalResourceId": event['LogicalResourceId'],
-        "Data": response_data
-    })
+    response_body = json.dumps(
+        {
+            "Status": response_status,
+            "Reason": f"See the details in CloudWatch Log Stream: {context.log_stream_name}",
+            "PhysicalResourceId": context.log_stream_name,
+            "StackId": event['StackId'],
+            "RequestId": event['RequestId'],
+            "LogicalResourceId": event['LogicalResourceId'],
+            "Data": response_data,
+        }
+    )
 
     LOGGER.info('ResponseURL: {s}'.format(s=event['ResponseURL']))
     LOGGER.info('ResponseBody: {s}'.format(s=response_body))
@@ -77,8 +79,7 @@ def read_from_s3(event, context, bucket, key):
         send_response(event, context, "FAILED",
                       {"Message": "Failed to read file from s3"})
     else:
-        results = obj['Body'].read().decode('utf-8')
-        return results
+        return obj['Body'].read().decode('utf-8')
 
 
 def copy_source(event, context):
@@ -115,13 +116,13 @@ def copy_source(event, context):
                     manifest = json.load(file)
                     print('UPLOADING FILES::')
                     for key in manifest:
-                        print('s3://'+source_bucket+'/'+source_key+'/'+key)
-                        copy_source = {
-                            'Bucket': source_bucket,
-                            'Key': source_key+'/'+key
-                        }
+                        print(f's3://{source_bucket}/{source_key}/{key}')
+                        copy_source = {'Bucket': source_bucket, 'Key': f'{source_key}/{key}'}
                         s3.meta.client.copy(copy_source, website_bucket, key)
-                        if replace_env_variables is True and key == "runtimeConfig.json":
+                        if (
+                            replace_env_variables
+                            and key == "runtimeConfig.json"
+                        ):
                             LOGGER.info("updating runtimeConfig.json")
                             write_to_s3(event, context, website_bucket, key, json.dumps(new_variables))
 

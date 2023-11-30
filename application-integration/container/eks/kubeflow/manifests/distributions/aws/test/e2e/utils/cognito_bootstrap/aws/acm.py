@@ -77,8 +77,7 @@ class AcmCertificate:
             logger.exception(f"failed to describe certificate {self.arn}")
             raise
         else:
-            certificate = response["Certificate"]
-            return certificate
+            return response["Certificate"]
 
     def wait_for_certificate_validation(
         self, wait_periods: int = 20, period_length: int = 30
@@ -94,8 +93,9 @@ class AcmCertificate:
             logger.exception(f"timed out waiting for validation: {self.arn}")
 
     def get_domain_validation_record_detail(self):
-        validation_options = self.describe().get("DomainValidationOptions", None)
-        if validation_options:
+        if validation_options := self.describe().get(
+            "DomainValidationOptions", None
+        ):
             return validation_options[0].get("ResourceRecord", None)
         return None
 

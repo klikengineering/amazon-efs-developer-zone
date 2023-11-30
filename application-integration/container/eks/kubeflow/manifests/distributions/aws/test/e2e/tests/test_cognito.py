@@ -37,13 +37,13 @@ class TestCognito:
 
     def test_url_is_up(self, setup, cognito_bootstrap):
         subdomain_name = cognito_bootstrap["route53"]["subDomain"]["name"]
-        kubeflow_endpoint = "https://kubeflow." + subdomain_name
+        kubeflow_endpoint = f"https://kubeflow.{subdomain_name}"
         response = requests.get(kubeflow_endpoint)
         assert response.status_code == 200
         # request was redirected
-        assert len(response.history) > 0
+        assert response.history
         # redirection was to cognito domain
-        assert "auth." + subdomain_name in response.url
+        assert f"auth.{subdomain_name}" in response.url
 
     # Kubeflow sdk client need cookies provided by ALB. Currently it is not possible to programmatically fetch these cookies using tokens provided by cognito
     # See - https://stackoverflow.com/questions/62572327/how-to-pass-cookies-when-calling-authentication-enabled-aws-application-loadbala

@@ -54,7 +54,7 @@ class S3Reader(Process):
                 key = s3_info[1]
                 file_path = os.path.join(self.tmp, random_string())
                 self._s3_client.download_file(bucket, key, file_path)
-                self._resp.put(file_path + " " + bucket + " " + key)
+                self._resp.put(f"{file_path} {bucket} {key}")
             except Exception as _:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)

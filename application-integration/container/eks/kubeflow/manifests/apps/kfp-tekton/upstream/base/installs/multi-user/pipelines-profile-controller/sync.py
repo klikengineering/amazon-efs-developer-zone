@@ -36,13 +36,13 @@ class Controller(BaseHTTPRequestHandler):
         # Compute status based on observed state.
         desired_status = {
             "kubeflow-pipelines-ready": \
-                len(children["Secret.v1"]) == 1 and \
-                len(children["ConfigMap.v1"]) == 1 and \
-                len(children["Deployment.apps/v1"]) == 2 and \
-                len(children["Service.v1"]) == 2 and \
-                len(children["DestinationRule.networking.istio.io/v1alpha3"]) == 1 and \
-                len(children["AuthorizationPolicy.security.istio.io/v1beta1"]) == 1 and \
-                "True" or "False"
+                    len(children["Secret.v1"]) == 1 and \
+                    len(children["ConfigMap.v1"]) == 1 and \
+                    len(children["Deployment.apps/v1"]) == 2 and \
+                    len(children["Service.v1"]) == 2 and \
+                    len(children["DestinationRule.networking.istio.io/v1alpha3"]) == 1 and \
+                    len(children["AuthorizationPolicy.security.istio.io/v1beta1"]) == 1 and \
+                    "True" or "False"
         }
 
         # Generate the desired child object(s).
@@ -57,62 +57,47 @@ class Controller(BaseHTTPRequestHandler):
                     "namespace": namespace,
                 },
                 "data": {
-                    "METADATA_GRPC_SERVICE_HOST":
-                    "metadata-grpc-service.kubeflow",
+                    "METADATA_GRPC_SERVICE_HOST": "metadata-grpc-service.kubeflow",
                     "METADATA_GRPC_SERVICE_PORT": "8080",
                 },
             },
-            # Visualization server related manifests below
             {
                 "apiVersion": "apps/v1",
                 "kind": "Deployment",
                 "metadata": {
-                    "labels": {
-                        "app": "ml-pipeline-visualizationserver"
-                    },
+                    "labels": {"app": "ml-pipeline-visualizationserver"},
                     "name": "ml-pipeline-visualizationserver",
                     "namespace": namespace,
                 },
                 "spec": {
                     "selector": {
-                        "matchLabels": {
-                            "app": "ml-pipeline-visualizationserver"
-                        },
+                        "matchLabels": {"app": "ml-pipeline-visualizationserver"},
                     },
                     "template": {
                         "metadata": {
-                            "labels": {
-                                "app": "ml-pipeline-visualizationserver"
-                            },
-                            "annotations": disable_istio_sidecar and {
-                                "sidecar.istio.io/inject": "false"
-                            } or {},
+                            "labels": {"app": "ml-pipeline-visualizationserver"},
+                            "annotations": disable_istio_sidecar
+                            and {"sidecar.istio.io/inject": "false"}
+                            or {},
                         },
                         "spec": {
-                            "containers": [{
-                                "image":
-                                "gcr.io/ml-pipeline/visualization-server:" +
-                                kfp_version,
-                                "imagePullPolicy":
-                                "IfNotPresent",
-                                "name":
-                                "ml-pipeline-visualizationserver",
-                                "ports": [{
-                                    "containerPort": 8888
-                                }],
-                                "resources": {
-                                    "requests": {
-                                        "cpu": "50m",
-                                        "memory": "200Mi"
-                                    },
-                                    "limits": {
-                                        "cpu": "500m",
-                                        "memory": "1Gi"
+                            "containers": [
+                                {
+                                    "image": "gcr.io/ml-pipeline/visualization-server:"
+                                    + kfp_version,
+                                    "imagePullPolicy": "IfNotPresent",
+                                    "name": "ml-pipeline-visualizationserver",
+                                    "ports": [{"containerPort": 8888}],
+                                    "resources": {
+                                        "requests": {
+                                            "cpu": "50m",
+                                            "memory": "200Mi",
+                                        },
+                                        "limits": {"cpu": "500m", "memory": "1Gi"},
                                     },
                                 }
-                            }],
-                            "serviceAccountName":
-                            "default-editor",
+                            ],
+                            "serviceAccountName": "default-editor",
                         },
                     },
                 },
@@ -126,12 +111,8 @@ class Controller(BaseHTTPRequestHandler):
                 },
                 "spec": {
                     "host": "ml-pipeline-visualizationserver",
-                    "trafficPolicy": {
-                        "tls": {
-                            "mode": "ISTIO_MUTUAL"
-                        }
-                    }
-                }
+                    "trafficPolicy": {"tls": {"mode": "ISTIO_MUTUAL"}},
+                },
             },
             {
                 "apiVersion": "security.istio.io/v1beta1",
@@ -142,18 +123,22 @@ class Controller(BaseHTTPRequestHandler):
                 },
                 "spec": {
                     "selector": {
-                        "matchLabels": {
-                            "app": "ml-pipeline-visualizationserver"
-                        }
+                        "matchLabels": {"app": "ml-pipeline-visualizationserver"}
                     },
-                    "rules": [{
-                        "from": [{
-                            "source": {
-                                "principals": ["cluster.local/ns/kubeflow/sa/ml-pipeline"]
-                            }
-                        }]
-                    }]
-                }
+                    "rules": [
+                        {
+                            "from": [
+                                {
+                                    "source": {
+                                        "principals": [
+                                            "cluster.local/ns/kubeflow/sa/ml-pipeline"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                },
             },
             {
                 "apiVersion": "v1",
@@ -163,70 +148,61 @@ class Controller(BaseHTTPRequestHandler):
                     "namespace": namespace,
                 },
                 "spec": {
-                    "ports": [{
-                        "name": "http",
-                        "port": 8888,
-                        "protocol": "TCP",
-                        "targetPort": 8888,
-                    }],
+                    "ports": [
+                        {
+                            "name": "http",
+                            "port": 8888,
+                            "protocol": "TCP",
+                            "targetPort": 8888,
+                        }
+                    ],
                     "selector": {
                         "app": "ml-pipeline-visualizationserver",
                     },
                 },
             },
-            # Artifact fetcher related resources below.
             {
                 "apiVersion": "apps/v1",
                 "kind": "Deployment",
                 "metadata": {
-                    "labels": {
-                        "app": "ml-pipeline-ui-artifact"
-                    },
+                    "labels": {"app": "ml-pipeline-ui-artifact"},
                     "name": "ml-pipeline-ui-artifact",
                     "namespace": namespace,
                 },
                 "spec": {
                     "selector": {
-                        "matchLabels": {
-                            "app": "ml-pipeline-ui-artifact"
-                        }
+                        "matchLabels": {"app": "ml-pipeline-ui-artifact"}
                     },
                     "template": {
                         "metadata": {
-                            "labels": {
-                                "app": "ml-pipeline-ui-artifact"
-                            },
-                            "annotations": disable_istio_sidecar and {
-                                "sidecar.istio.io/inject": "false"
-                            } or {},
+                            "labels": {"app": "ml-pipeline-ui-artifact"},
+                            "annotations": disable_istio_sidecar
+                            and {"sidecar.istio.io/inject": "false"}
+                            or {},
                         },
                         "spec": {
-                            "containers": [{
-                                "name":
-                                "ml-pipeline-ui-artifact",
-                                "image":
-                                "gcr.io/ml-pipeline/frontend:" + kfp_version,
-                                "imagePullPolicy":
-                                "IfNotPresent",
-                                "ports": [{
-                                    "containerPort": 3000
-                                }],
-                                "resources": {
-                                    "requests": {
-                                        "cpu": "10m",
-                                        "memory": "70Mi"
-                                    },
-                                    "limits": {
-                                        "cpu": "100m",
-                                        "memory": "500Mi"
+                            "containers": [
+                                {
+                                    "name": "ml-pipeline-ui-artifact",
+                                    "image": f"gcr.io/ml-pipeline/frontend:{kfp_version}",
+                                    "imagePullPolicy": "IfNotPresent",
+                                    "ports": [{"containerPort": 3000}],
+                                    "resources": {
+                                        "requests": {
+                                            "cpu": "10m",
+                                            "memory": "70Mi",
+                                        },
+                                        "limits": {
+                                            "cpu": "100m",
+                                            "memory": "500Mi",
+                                        },
                                     },
                                 }
-                            }],
-                            "serviceAccountName":
-                            "default-editor"
-                        }
-                    }
-                }
+                            ],
+                            "serviceAccountName": "default-editor",
+                        },
+                    },
+                },
             },
             {
                 "apiVersion": "v1",
@@ -234,22 +210,19 @@ class Controller(BaseHTTPRequestHandler):
                 "metadata": {
                     "name": "ml-pipeline-ui-artifact",
                     "namespace": namespace,
-                    "labels": {
-                        "app": "ml-pipeline-ui-artifact"
-                    }
+                    "labels": {"app": "ml-pipeline-ui-artifact"},
                 },
                 "spec": {
-                    "ports": [{
-                        "name":
-                        "http",  # name is required to let istio understand request protocol
-                        "port": 80,
-                        "protocol": "TCP",
-                        "targetPort": 3000
-                    }],
-                    "selector": {
-                        "app": "ml-pipeline-ui-artifact"
-                    }
-                }
+                    "ports": [
+                        {
+                            "name": "http",  # name is required to let istio understand request protocol
+                            "port": 80,
+                            "protocol": "TCP",
+                            "targetPort": 3000,
+                        }
+                    ],
+                    "selector": {"app": "ml-pipeline-ui-artifact"},
+                },
             },
         ]
         print('Received request:', parent)

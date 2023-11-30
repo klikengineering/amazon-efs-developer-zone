@@ -62,9 +62,7 @@ class ManifestDataset():
             self.pre_fetch_thread.join()
 
         self.end_ts = self.start_ts + self.step
-        if self.end_ts > self.stop_ts:
-            self.end_ts = self.stop_ts
-
+        self.end_ts = min(self.end_ts, self.stop_ts)
         self.pre_fetch_thread = None
         self.cur_batch=self.next_batch
         self.next_batch=None

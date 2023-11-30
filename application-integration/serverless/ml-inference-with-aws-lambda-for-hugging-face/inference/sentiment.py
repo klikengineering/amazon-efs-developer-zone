@@ -9,8 +9,4 @@ from transformers import pipeline
 nlp = pipeline("sentiment-analysis")
 
 def handler(event, context):
-    response = {
-        "statusCode": 200,
-        "body": nlp(event['text'])[0]
-    }
-    return response
+    return {"statusCode": 200, "body": nlp(event['text'])[0]}

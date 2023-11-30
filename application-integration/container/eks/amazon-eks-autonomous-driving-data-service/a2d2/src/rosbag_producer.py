@@ -66,13 +66,13 @@ class RosbagProducer(Process):
 
         self.img_cv_bridge = cv_bridge.CvBridge()
 
-        self.manifests = dict() 
+        self.manifests = dict()
         sensors = self.request['sensor_id']
         self.topic_dict = dict()
-        self.topic_list = list()
+        self.topic_list = []
         self.topic_active = dict()
         self.topic_index = 0
-        self.round_robin = list()
+        self.round_robin = []
         self.bus_topic = None
 
         for s in sensors:
@@ -82,11 +82,7 @@ class RosbagProducer(Process):
             self.topic_list.append(_topic)
             self.topic_active[_topic] = True
 
-        if len(sensors) > 1:
-            self.bag_lock = threading.Lock()
-        else:
-            self.bag_lock = None
-
+        self.bag_lock = threading.Lock() if len(sensors) > 1 else None
         self.bag = None
         self.bag_path = None
         self.bag_name = None
@@ -138,20 +134,20 @@ class RosbagProducer(Process):
             self.bag.close()
             resp_topic = self.request['response_topic']
             if self.accept.startswith("s3/"):
-                if s3_client == None:
+                if s3_client is None:
                     s3_client = get_s3_client()
                 prefix = self.rosbag_prefix + resp_topic + "/"
                 key = prefix +  self.bag_name
                 json_msg = { "output": "s3", "bag_bucket": self.rosbag_bucket, 
                         "bag_prefix": prefix, 
-                        "bag_name": self.bag_name, "multipart": self.multipart} 
+                        "bag_name": self.bag_name, "multipart": self.multipart}
                 with open(self.bag_path, 'rb') as data:
                     s3_client.upload_fileobj(data, self.rosbag_bucket, key)
                     data.close()
                     os.remove(self.bag_path)
             elif self.accept.startswith("fsx/"):
                 json_msg = { "output": "fsx", "bag_path": self.bag_path , 
-                    "multipart": self.multipart} 
+                    "multipart": self.multipart}
             elif self.accept.startswith("efs/"):
                 json_msg = { "output": "efs", "bag_path": self.bag_path , 
                     "multipart": self.multipart} 
@@ -180,7 +176,7 @@ class RosbagProducer(Process):
     def __next_round_robin_topic(self,  topic=None, msg=None, ts=None):
         # add message to topic queue
         self.topic_dict[topic].append(Qmsg(msg=msg, ts=ts))
-                
+
         msg = None
         ts = None
         topic = None
@@ -190,7 +186,11 @@ class RosbagProducer(Process):
         for _topic in self.topic_list:
             self.topic_index = (self.topic_index + 1) % _ntopics
             _topic = self.topic_list[ self.topic_index ]
-            if _topic in self.round_robin and any([True for k in self.topic_active.keys() if not (k in self.round_robin) and self.__is_topic_alive(k)]):
+            if _topic in self.round_robin and any(
+                True
+                for k in self.topic_active.keys()
+                if k not in self.round_robin and self.__is_topic_alive(k)
+            ):
                 continue
 
             if self.topic_dict[_topic]:
@@ -199,7 +199,7 @@ class RosbagProducer(Process):
                 ts = front.ts
                 topic = _topic
                 break
-        
+
         return topic, msg, ts
 
     def __flush_bag(self):
@@ -378,7 +378,7 @@ class RosbagProducer(Process):
             for f in files:
                 bucket = f[0]
                 key = f[1]
-                req.put(bucket+" "+key)
+                req.put(f"{bucket} {key}")
 
             self.__process_s3_image_files(ros_topic=ros_topic, files=files, resp=resp, frame_id=frame_id, 
                             s3_client=s3_client, image_request=image_request, 
@@ -391,7 +391,7 @@ class RosbagProducer(Process):
         s3_reader.join(timeout=2)
         if s3_reader.is_alive():
             s3_reader.terminate()
-        
+
         self.topic_active[ros_topic] = False
 
     def __record_pcl_msg(self, ros_topic=None, points=None, reflectance=None, pcl_ts=None, frame_id=None, s3_client=None):
@@ -417,10 +417,10 @@ class RosbagProducer(Process):
             try:
                 path = resp.get(block=True).split(" ", 1)[0]
                 npz = np.load(path)
-                pcl_ts= int(f[2])
                 points, reflectance = RosUtil.parse_pcl_npz(npz=npz, lidar_view=lidar_view, 
                         vehicle_transform_matrix=vehicle_transform_matrix)
                 if not np.isnan(points).any():
+                    pcl_ts= int(f[2])
                     self.__record_pcl_msg(ros_topic=ros_topic, points=points, reflectance=reflectance, 
                         pcl_ts=pcl_ts, frame_id=frame_id, s3_client=s3_client)
                 os.remove(path)
@@ -442,7 +442,7 @@ class RosbagProducer(Process):
 
         lidar_view = self.request.get("lidar_view", "camera")
         vehicle_transform_matrix = self.__sensor_to_vehicle_matrix(sensor=sensor) if lidar_view == "vehicle" else None
-        
+
         while True:
             files = None
             while not files and manifest.is_open():
@@ -453,7 +453,7 @@ class RosbagProducer(Process):
             for f in files:
                 bucket = f[0]
                 key = f[1]
-                req.put(bucket+" "+key)
+                req.put(f"{bucket} {key}")
 
             self.__process_s3_pcl_files(ros_topic=ros_topic, 
                     files=files, resp=resp, frame_id=frame_id, s3_client=s3_client,
@@ -577,12 +577,12 @@ class RosbagProducer(Process):
                             "ros_topic": ros_topic, "sensor":  s, "frame_id": frame_id})
                 tasks.append(t)
                 t.start()
-                self.logger.info("Started thread:" + t.getName())
+                self.logger.info(f"Started thread:{t.getName()}")
 
             for t in tasks:
-                self.logger.info("Wait on thread:" + t.getName())
+                self.logger.info(f"Wait on thread:{t.getName()}")
                 t.join()
-                self.logger.info("Thread finished:" + t.getName())
+                self.logger.info(f"Thread finished:{t.getName()}")
 
             self.logger.info("Flush ROS bag")
             self.__flush_bag()
@@ -590,13 +590,13 @@ class RosbagProducer(Process):
             self.logger.info("Close ROS bag")
             self.__close_bag()
 
-            json_msg = {"__close__": True} 
+            json_msg = {"__close__": True}
             resp_topic = self.request['response_topic']
             self.producer.send(resp_topic, json.dumps(json_msg).encode('utf-8'))
 
             self.producer.flush()
             self.producer.close()
-            print("completed request:"+resp_topic)
+            print(f"completed request:{resp_topic}")
         except Exception as _:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)

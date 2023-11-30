@@ -47,7 +47,7 @@ def main(config):
 
     # delete existing output prefix in case we there is a retry attempt
     s3_delete_prefix(s3_client, config["s3_bucket"], config["s3_output_prefix"] )
-   
+
     glue = boto3.client(service_name='glue')
 
     job_name=f"a2d2-metadata-etl-{str(time.time()).replace('.','')}"
@@ -66,15 +66,15 @@ def main(config):
 
     job_run = glue.start_job_run(JobName=job['Name'])
     status = glue.get_job_run(JobName=job['Name'], RunId=job_run['JobRunId'])
-    print(str(status))
+    print(status)
 
     run_state = status['JobRun']['JobRunState']
-    while run_state == "RUNNING" or run_state == "STARTING" or run_state == "STOPPING" or run_state == "STOPPED":
+    while run_state in ["RUNNING", "STARTING", "STOPPING", "STOPPED"]:
         print(f"Glue Job is {run_state}")
         time.sleep(30)
         status = glue.get_job_run(JobName=job['Name'], RunId=job_run['JobRunId'])
         run_state = status['JobRun']['JobRunState']
-    
+
     if run_state != "SUCCEEDED":
         import sys
         sys.exit(f"Glue job final status: {run_state}")

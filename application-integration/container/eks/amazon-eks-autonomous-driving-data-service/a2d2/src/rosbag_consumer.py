@@ -69,7 +69,7 @@ class RosbagConsumer(Process):
     def __get_ros_publishers(self, reader):
         topics_types = RosUtil.get_topics_types(reader)
         for ros_topic, data_type in topics_types.items():
-            if not ros_topic in self.ros_publishers:
+            if ros_topic not in self.ros_publishers:
                 ros_data_class = RosUtil.get_data_class(data_type)
                 self.ros_publishers[ros_topic] = rospy.Publisher(ros_topic, ros_data_class, queue_size=64)
                 time.sleep(1)
@@ -107,7 +107,7 @@ class RosbagConsumer(Process):
             bag_bucket = json_msg["bag_bucket"]
             bag_prefix = json_msg["bag_prefix"]
             bag_name = json_msg["bag_name"]
-            msg = bag_bucket + " " + bag_prefix + bag_name
+            msg = f"{bag_bucket} {bag_prefix}{bag_name}"
             self.s3_read_req.put(msg)
             self.__read_s3()
         else:
@@ -122,7 +122,7 @@ class RosbagConsumer(Process):
             self.logger.info("starting rosbag_consumer:{0}".format(self.response_topic))
             node_name = "mozart_rosbag_{0}".format(random_string(6))
             rospy.init_node(node_name)
-            
+
             consumer = KafkaConsumer(self.response_topic, 
                                 bootstrap_servers=self.servers,
                                 auto_offset_reset="earliest",
@@ -147,14 +147,14 @@ class RosbagConsumer(Process):
                 except Exception as _:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)
-                    print(str(exc_type))
-                    print(str(exc_value))
+                    print(exc_type)
+                    print(exc_value)
 
             if self.s3:
                 self.s3_read_req.put("__close__")
                 time.sleep(5)
                 self.__read_s3(drain=True)
-                
+
                 self.s3_reader.join(timeout=2)
                 if self.s3_reader.is_alive():
                     self.s3_reader.terminate()
@@ -176,5 +176,5 @@ class RosbagConsumer(Process):
         except Exception as _:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, limit=20, file=sys.stdout)
-            print(str(exc_type))
-            print(str(exc_value))
+            print(exc_type)
+            print(exc_value)

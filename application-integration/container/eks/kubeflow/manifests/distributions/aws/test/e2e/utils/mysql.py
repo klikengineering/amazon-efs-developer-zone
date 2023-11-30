@@ -10,10 +10,7 @@ def query(mysql_client: mysql.connector.MySQLConnection, query):
 
     cursor.execute(query)
 
-    results = []
-    for row in cursor:
-        results.append(row)
-
+    results = list(cursor)
     cursor.close()
     mysql_client.commit()
 
