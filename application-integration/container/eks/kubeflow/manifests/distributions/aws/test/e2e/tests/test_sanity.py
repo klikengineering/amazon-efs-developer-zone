@@ -115,7 +115,7 @@ class TestSanity:
 
         assert run.name == job_name
         assert run.pipeline_spec.pipeline_id == pipeline_id
-        assert run.status == None
+        assert run.status is None
 
         wait_for_run_succeeded(kfp_client, run, job_name, pipeline_id)
 

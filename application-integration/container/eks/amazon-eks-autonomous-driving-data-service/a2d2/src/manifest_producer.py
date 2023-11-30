@@ -42,30 +42,34 @@ class ManifestProducer(Process):
         self.servers = servers
         self.request = request
 
-        self.manifests = [] 
+        self.manifests = []
         sensors = self.request['sensor_id']
-        for s in sensors:
-            self.manifests.append(self.create_manifest(dbconfig=dbconfig, sensor_id=s))
+        self.manifests.extend(
+            self.create_manifest(dbconfig=dbconfig, sensor_id=s) for s in sensors
+        )
 
 
     def create_manifest(self, dbconfig=None, sensor_id=None):
-        if sensor_id == 'bus':
-            manifest = BusDataset(dbconfig=dbconfig, 
-                        vehicle_id=self.request["vehicle_id"],
-                        scene_id=self.request["scene_id"],
-                        start_ts=int(self.request["start_ts"]), 
-                        stop_ts=int(self.request["stop_ts"]),
-                        step=int(self.request["step"]))
-        else:
-            manifest = ManifestDataset(dbconfig=dbconfig, 
-                        vehicle_id=self.request["vehicle_id"],
-                        scene_id=self.request["scene_id"],
-                        sensor_id=sensor_id,
-                        start_ts=int(self.request["start_ts"]), 
-                        stop_ts=int(self.request["stop_ts"]),
-                        step=int(self.request["step"]))
-
-        return manifest
+        return (
+            BusDataset(
+                dbconfig=dbconfig,
+                vehicle_id=self.request["vehicle_id"],
+                scene_id=self.request["scene_id"],
+                start_ts=int(self.request["start_ts"]),
+                stop_ts=int(self.request["stop_ts"]),
+                step=int(self.request["step"]),
+            )
+            if sensor_id == 'bus'
+            else ManifestDataset(
+                dbconfig=dbconfig,
+                vehicle_id=self.request["vehicle_id"],
+                scene_id=self.request["scene_id"],
+                sensor_id=sensor_id,
+                start_ts=int(self.request["start_ts"]),
+                stop_ts=int(self.request["stop_ts"]),
+                step=int(self.request["step"]),
+            )
+        )
 
     def publish_manifest(self, manifest=None):
 

@@ -65,15 +65,13 @@ scene_id_udf = udf(scene_id, StringType())
 
 def s3_key(file_name, cam_name):
     parts=file_name.split('_')
-    s3_key = f"a2d2/camera_lidar/{parts[0][0:8]}_{parts[0][8:]}/{parts[1]}/cam_{cam_name}/{file_name}"
-    return s3_key
+    return f"a2d2/camera_lidar/{parts[0][:8]}_{parts[0][8:]}/{parts[1]}/cam_{cam_name}/{file_name}"
 
 s3_key_udf = udf(s3_key, StringType())
 
 def sensor_id(file_name, cam_name):
     parts=file_name.split('_')
-    sensor_id = f"{parts[1]}/{cam_name}"
-    return sensor_id
+    return f"{parts[1]}/{cam_name}"
 
 sensor_id_udf = udf(sensor_id, StringType())
 

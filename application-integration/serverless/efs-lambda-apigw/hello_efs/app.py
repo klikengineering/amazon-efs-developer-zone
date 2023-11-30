@@ -38,21 +38,19 @@ def lambda_handler(event, context):
     # The files in EFS are not only persistent across executions, but if multiple
     # Lambda functions are mounted to the same EFS file system, you can read and
     # write files from either function.
-    
+
     method = event['requestContext']['http']['method']
     delete_flag = False
-    
-    if method == 'GET':
-        messages = get_messages()
+
+    if method == 'DELETE':
+        delete_messages()
+        delete_flag = True
+        return 'Messages deleted.\n'
+    elif method == 'GET':
+        return get_messages()
     elif method == 'POST':
         new_message = event['body']
         add_message(new_message)
-        messages = get_messages()
-    elif method == 'DELETE':
-        delete_messages()
-        delete_flag = True
-        messages = 'Messages deleted.\n'
+        return get_messages()
     else:
-        messages = 'Method unsupported.\n'
-
-    return messages
+        return 'Method unsupported.\n'

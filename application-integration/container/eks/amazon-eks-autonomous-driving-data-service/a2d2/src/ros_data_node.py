@@ -51,9 +51,9 @@ class RosDataNode:
             format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',
             level=logging.INFO)
 
-        self.logger.info(f"Start Rosbridge server")
+        self.logger.info("Start Rosbridge server")
         subprocess.Popen(["roslaunch", "rosbridge_server", "rosbridge_websocket.launch"])
-       
+
         self.dbconfig=config['database']
         self.data_store=config['data_store']
         calibration=config['calibration']
@@ -75,12 +75,12 @@ class RosDataNode:
       
 
     def init_request(self, request):
-        self.manifests = dict() 
+        self.manifests = dict()
         self.topic_dict = dict()
-        self.topic_list = list()
+        self.topic_list = []
         self.topic_active = dict()
         self.topic_index = 0
-        self.round_robin = list()
+        self.round_robin = []
         self.bus_topic = None
 
         self.request = request
@@ -119,12 +119,12 @@ class RosDataNode:
                             "ros_topic": ros_topic, "sensor":  s, "frame_id": frame_id})
                 tasks.append(t)
                 t.start()
-                self.logger.info("Started thread:" + t.getName())
+                self.logger.info(f"Started thread:{t.getName()}")
 
             for t in tasks:
-                self.logger.info("Wait on thread:" + t.getName())
+                self.logger.info(f"Wait on thread:{t.getName()}")
                 t.join()
-                self.logger.info("Thread finished:" + t.getName())
+                self.logger.info(f"Thread finished:{t.getName()}")
 
             self.logger.info("Flush ROS topics")
             self.__flush_topics()
@@ -143,7 +143,7 @@ class RosDataNode:
     def __next_round_robin_topic(self,  topic=None, msg=None):
         # add message to topic queue
         self.topic_dict[topic].append(msg)
-                
+
         msg = None
         topic = None
 
@@ -152,14 +152,18 @@ class RosDataNode:
         for _topic in self.topic_list:
             self.topic_index = (self.topic_index + 1) % _ntopics
             _topic = self.topic_list[ self.topic_index ]
-            if _topic in self.round_robin and any([True for k in self.topic_active.keys() if not (k in self.round_robin) and self.__is_topic_alive(k)]):
+            if _topic in self.round_robin and any(
+                True
+                for k in self.topic_active.keys()
+                if k not in self.round_robin and self.__is_topic_alive(k)
+            ):
                 continue
 
             if self.topic_dict[_topic]:
                 msg = self.topic_dict[_topic].pop(0)
                 topic = _topic
                 break
-        
+
         return topic, msg
 
     def __flush_topics(self):
@@ -319,7 +323,7 @@ class RosDataNode:
             for f in files:
                 bucket = f[0]
                 key = f[1]
-                req.put(bucket+" "+key)
+                req.put(f"{bucket} {key}")
 
             self.__process_s3_image_files(ros_topic=ros_topic, files=files, resp=resp, frame_id=frame_id, 
                             image_request=image_request, 
@@ -333,7 +337,7 @@ class RosDataNode:
         s3_reader.join(timeout=2)
         if s3_reader.is_alive():
             s3_reader.terminate()
-        
+
         self.topic_active[ros_topic] = False
 
     def __publish_pcl_msg(self, ros_topic=None, points=None, reflectance=None, pcl_ts=None, frame_id=None):
@@ -358,10 +362,10 @@ class RosDataNode:
             try:
                 path = resp.get(block=True).split(" ", 1)[0]
                 npz = np.load(path)
-                pcl_ts= int(f[2])
                 points, reflectance = RosUtil.parse_pcl_npz(npz=npz, lidar_view=lidar_view, 
                         vehicle_transform_matrix=vehicle_transform_matrix)
                 if not np.isnan(points).any():
+                    pcl_ts= int(f[2])
                     self.__publish_pcl_msg(ros_topic=ros_topic, points=points, reflectance=reflectance, 
                         pcl_ts=pcl_ts, frame_id=frame_id)
                 os.remove(path)
@@ -381,7 +385,7 @@ class RosDataNode:
 
         lidar_view = self.request.get("lidar_view", "camera")
         vehicle_transform_matrix = self.__sensor_to_vehicle_matrix(sensor=sensor) if lidar_view == "vehicle" else None
-        
+
         while True:
             files = None
             while not files and manifest.is_open():
@@ -392,7 +396,7 @@ class RosDataNode:
             for f in files:
                 bucket = f[0]
                 key = f[1]
-                req.put(bucket+" "+key)
+                req.put(f"{bucket} {key}")
 
             self.__process_s3_pcl_files(ros_topic=ros_topic, 
                     files=files, resp=resp, frame_id=frame_id,

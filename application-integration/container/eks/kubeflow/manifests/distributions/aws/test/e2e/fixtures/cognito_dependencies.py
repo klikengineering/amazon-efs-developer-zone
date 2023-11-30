@@ -70,7 +70,7 @@ def cognito_bootstrap(
             "us-east-1-certARN"
         ] = subdomain_cert_n_virginia.arn
         cognito_deps["route53"]["subDomain"][
-            region + "-certARN"
+            f"{region}-certARN"
         ] = subdomain_cert_deployment_region.arn
 
         userpool_name = subdomain_name
@@ -185,9 +185,15 @@ def configure_ingress(region, cognito_bootstrap, cluster, configure_kf_admin_rol
         env_file_path="../../../../distributions/aws/istio-ingress/overlays/cognito/params.env",
         env_dict={
             "CognitoUserPoolArn": cognito_bootstrap["cognitoUserpool"]["ARN"],
-            "CognitoAppClientId": cognito_bootstrap["cognitoUserpool"]["appClientId"],
-            "CognitoUserPoolDomain": cognito_bootstrap["cognitoUserpool"]["domain"],
-            "certArn": cognito_bootstrap["route53"]["subDomain"][region + "-certARN"],
+            "CognitoAppClientId": cognito_bootstrap["cognitoUserpool"][
+                "appClientId"
+            ],
+            "CognitoUserPoolDomain": cognito_bootstrap["cognitoUserpool"][
+                "domain"
+            ],
+            "certArn": cognito_bootstrap["route53"]["subDomain"][
+                f"{region}-certARN"
+            ],
             "loadBalancerScheme": "internet-facing",
         },
     )
@@ -212,10 +218,7 @@ def configure_ingress(region, cognito_bootstrap, cluster, configure_kf_admin_rol
     )
 
     subnets = response["Subnets"]
-    resources = []
-    for subnet in subnets:
-        resources.append(subnet["SubnetId"])
-
+    resources = [subnet["SubnetId"] for subnet in subnets]
     ec2_client.create_tags(
         Resources=resources,
         Tags=[

@@ -23,11 +23,13 @@ def update_hosted_zone_with_alb(
     )
 
     _platform_record = subdomain_hosted_zone.generate_change_record(
-        record_name="*." + subdomain_name, record_type="CNAME", record_value=[alb_dns]
+        record_name=f"*.{subdomain_name}",
+        record_type="CNAME",
+        record_value=[alb_dns],
     )
 
     _default_platform_record = subdomain_hosted_zone.generate_change_record(
-        record_name="*.default." + subdomain_name,
+        record_name=f"*.default.{subdomain_name}",
         record_type="CNAME",
         record_value=[alb_dns],
     )
@@ -42,7 +44,7 @@ def update_hosted_zone_with_alb(
             record_name=subdomain_name,
             record_type="A",
             hosted_zone_id=alb_details["CanonicalHostedZoneId"],
-            dns_name="dualstack." + alb_dns,
+            dns_name=f"dualstack.{alb_dns}",
         )
     )
 

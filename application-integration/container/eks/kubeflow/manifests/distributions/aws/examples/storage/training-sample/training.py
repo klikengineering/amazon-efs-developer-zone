@@ -35,15 +35,14 @@ def create_model(num_classes):
     return model
 
 def get_data_split(subset_type):
-    ds = tf.keras.utils.image_dataset_from_directory(
-    DATA_DIR,
-    validation_split=0.2,
-    subset=subset_type,
-    seed=123,
-    image_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=BATCH_SIZE)
-
-    return ds
+    return tf.keras.utils.image_dataset_from_directory(
+        DATA_DIR,
+        validation_split=0.2,
+        subset=subset_type,
+        seed=123,
+        image_size=(IMG_HEIGHT, IMG_WIDTH),
+        batch_size=BATCH_SIZE,
+    )
 
 def main():    
     # Define the datasets based on images already loaded onto the EFS Volume

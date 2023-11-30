@@ -44,10 +44,7 @@ class ElasticLoadBalancingV2:
         """
         dns_prefix = dns.split(".")[0]
         last_hypen_index = dns_prefix.rfind("-")
-        if last_hypen_index != -1:
-            return dns[:last_hypen_index]
-        else:
-            return dns_prefix
+        return dns[:last_hypen_index] if last_hypen_index != -1 else dns_prefix
 
     def get_registered_target_groups(self, alb_arn: str) -> dict:
         try:
@@ -69,7 +66,6 @@ class ElasticLoadBalancingV2:
                 logger.info(f"deleted target group {target_group_arn}")
             except ClientError:
                 logger.exception(f"failed to delete target group {target_group_arn}")
-                pass
 
     def get_listeners(self, alb_arn: str) -> dict:
         try:
@@ -89,7 +85,6 @@ class ElasticLoadBalancingV2:
                 logger.info(f"deleted listener {listener_arn}")
             except ClientError:
                 logger.exception(f"failed to delete listener {listener_arn}")
-                pass
 
     def delete(self):
         alb_arn = self.describe()["LoadBalancerArn"]

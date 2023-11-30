@@ -27,10 +27,7 @@ class Metadata:
     """
 
     def __init__(self, params=None):
-        if params:
-            self.params = params
-        else:
-            self.params = {}
+        self.params = params if params else {}
 
     def insert(self, key, value):
         self.params[key] = value
@@ -41,13 +38,10 @@ class Metadata:
         print(f"Saved key: {key} value: {value} in metadata file {file}")
 
     def get(self, key):
-        if key not in self.params:
-            return None
-
-        return self.params[key]
+        return None if key not in self.params else self.params[key]
 
     def to_file(self):
-        filename = "metadata-" + str(time.time_ns()) + ".json"
+        filename = f"metadata-{str(time.time_ns())}.json"
         filepath = os.path.abspath(os.path.join(METADATA_FOLDER, filename))
 
         with safe_open(filepath, "w") as file:
@@ -55,8 +49,8 @@ class Metadata:
 
         return filepath
 
-    def from_file(filepath):
-        with open(filepath) as file:
+    def from_file(self):
+        with open(self) as file:
             return Metadata(json.load(file))
 
 
@@ -67,8 +61,7 @@ def metadata(request):
     Else, created an empty metadata object.
     """
 
-    metadata_file = load_metadata_file(request)
-    if metadata_file:
+    if metadata_file := load_metadata_file(request):
         return Metadata.from_file(metadata_file)
 
     return Metadata()

@@ -46,7 +46,7 @@ def main(config):
 
     s3_client = boto3.client('s3')
     batch_client = boto3.client('batch')
-   
+
     # get a list of objects in the source bucket
     jobs={}
     aws_region = os.environ['AWS_DEFAULT_REGION']
@@ -85,7 +85,7 @@ def main(config):
 
     succeeded=[]
     failed = []
-    pending=[ job_id for job_id in jobs.keys() ]
+    pending = list(jobs.keys())
 
     while pending:
         response = batch_client.describe_jobs(jobs=pending)
@@ -98,10 +98,10 @@ def main(config):
                 failed.append(_job["jobId"])
             else:
                 pending.append(_job["jobId"])
-        
+
         for j in succeeded:
             print(f"Job Succeeded: {job_queue}:{j}: {jobs[j]}")
-    
+
         for j in failed:
             print(f"Job Failed: {job_queue}:{j}: {jobs[j]}")
 
@@ -109,7 +109,7 @@ def main(config):
             print(f"Job Pending: {job_queue}:{j}: {jobs[j]}")
 
         time.sleep(60)
-    
+
     if failed:
         import sys
         sys.exit(f"Failed: batch jobs: {failed}")

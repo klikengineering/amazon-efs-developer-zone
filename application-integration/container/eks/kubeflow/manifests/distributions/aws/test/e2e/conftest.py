@@ -78,8 +78,7 @@ def region(metadata, request):
 
 @pytest.fixture(scope="class")
 def root_domain_name(metadata, request):
-    cognito_deps = metadata.get("cognito_dependencies")
-    if cognito_deps:
+    if cognito_deps := metadata.get("cognito_dependencies"):
         return cognito_deps["route53"]["rootDomain"]["name"]
 
     return request.config.getoption("--root-domain-name")
@@ -87,8 +86,7 @@ def root_domain_name(metadata, request):
 
 @pytest.fixture(scope="class")
 def root_domain_hosted_zone_id(metadata, request):
-    cognito_deps = metadata.get("cognito_dependencies")
-    if cognito_deps:
+    if cognito_deps := metadata.get("cognito_dependencies"):
         return cognito_deps["route53"]["rootDomain"]["hostedZoneId"]
 
     return request.config.getoption("--root-domain-hosted-zone-id")

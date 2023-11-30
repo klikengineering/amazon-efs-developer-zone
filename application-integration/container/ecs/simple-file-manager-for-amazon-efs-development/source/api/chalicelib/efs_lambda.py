@@ -29,7 +29,7 @@ def delete(event):
     path = event['path']
     name = event['name']
 
-    file = path + '/' + name
+    file = f'{path}/{name}'
 
     try:
         os.remove(file)
@@ -44,7 +44,7 @@ def make_dir(event):
     path = event['path']
     name = event['name']
 
-    new_dir = path + '/' + name
+    new_dir = f'{path}/{name}'
 
     try:
         os.mkdir(new_dir)
@@ -166,19 +166,14 @@ def lambda_handler(event, context):
         raise Exception('Missing required parameter in event: "operation"')
     else:
         if operation_type == 'upload':
-            upload_result = upload(event)
-            return upload_result
+            return upload(event)
         if operation_type == 'list':
-            list_result = list(event)
-            return list_result
-        if operation_type == 'modify':
-            modify(event)
+            return list(event)
         if operation_type == 'delete':
-            delete_result = delete(event)
-            return delete_result
-        if operation_type == 'make_dir':
-            make_dir_result = make_dir(event)
-            return make_dir_result
-        if operation_type == 'download':
-            download_result = download(event)
-            return download_result
+            return delete(event)
+        elif operation_type == 'download':
+            return download(event)
+        elif operation_type == 'make_dir':
+            return make_dir(event)
+        elif operation_type == 'modify':
+            modify(event)

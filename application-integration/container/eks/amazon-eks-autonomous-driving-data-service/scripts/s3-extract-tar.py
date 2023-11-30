@@ -137,10 +137,10 @@ class S3TarExtractor(Process):
     def __submit_batch_jobs(cls, config=None, total_file_count=None):
 
         batch_client = boto3.client('batch')
-    
+
         # batch jobs
         jobs=[]
-    
+
         s3_python_script = config['s3_python_script']
         s3_json_config = config['s3_json_config']
         file_path = config['file_path']
@@ -177,7 +177,7 @@ class S3TarExtractor(Process):
 
         succeeded=[]
         failed = []
-        pending=[ job_id for job_id in jobs ]
+        pending = list(jobs)
 
         while pending:
             response = batch_client.describe_jobs(jobs=pending)
@@ -192,7 +192,7 @@ class S3TarExtractor(Process):
                     pending.append(_job["jobId"])
 
             time.sleep(5)
-        
+
         if failed:
             import sys
             sys.exit(f"Failed: batch jobs: {failed}")
@@ -304,10 +304,10 @@ class S3TarExtractor(Process):
 
             mdir = os.path.join(tmp_dir, "manifests")
             os.makedirs(mdir, mode=0o777, exist_ok=True)
-    
+
             source_bucket = config["source_bucket"]
             dest_bucket = config["dest_bucket"]
-        
+
             dest_prefix = config["dest_prefix"]
             manifest_name = key if key.find('/') == -1 else key.rsplit('/', 1)[1]
             manifest_path = os.path.join(mdir, manifest_name)
@@ -330,7 +330,7 @@ class S3TarExtractor(Process):
             else:
                 config['file_path'] = cls.__download_file(s3_client=s3_client, bucket_name=source_bucket, key=key, 
                     dir=tmp_dir, mdir=mdir, dest_bucket=dest_bucket)
-        
+
         file_path = config['file_path']
         if not file_path:
             cls.logger.info("No file to be extracted")
@@ -370,18 +370,21 @@ class S3TarExtractor(Process):
 
             for _p in _p_list:
                 _p.join()
-    
-        elapsed = time.time() - start_time
-    
+
         if not start and not end:
-            verified = cls.__verify_manifest(s3_client=s3_client, manifest_path=manifest_path, dest_bucket=dest_bucket)
-            if verified:
+            elapsed = time.time() - start_time
+
+            if verified := cls.__verify_manifest(
+                s3_client=s3_client,
+                manifest_path=manifest_path,
+                dest_bucket=dest_bucket,
+            ):
                 manifest_key = f"manifests/{key}"
                 s3_client = boto3.client('s3')
                 s3_client.upload_file(manifest_path, dest_bucket, manifest_key)
                 os.remove(manifest_path)
                 os.remove(file_path)
-                cls.logger.info(f"Extraction completed: {elapsed} secs") 
+                cls.logger.info(f"Extraction completed: {elapsed} secs")
             else:
                 cls.logger.info(f"Extraction verification error: {elapsed} secs")
                 sys.exit(1)

@@ -230,7 +230,10 @@ def does_need_to_create_efs_file_system() -> bool:
     efs_client = get_efs_client()
     efs_file_systems = efs_client.describe_file_systems()["FileSystems"]
 
-    return not any(file_system.get("Name", "") == EFS_FILE_SYSTEM_NAME for file_system in efs_file_systems)
+    return all(
+        file_system.get("Name", "") != EFS_FILE_SYSTEM_NAME
+        for file_system in efs_file_systems
+    )
 
 
 def get_efs_client():

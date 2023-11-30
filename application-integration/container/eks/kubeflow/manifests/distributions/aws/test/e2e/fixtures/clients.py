@@ -110,9 +110,7 @@ def session_cookie(port_forward, host, login, password):
     }
     data = {"login": login, "password": password}
     session.post(response.url, headers=headers, data=data)
-    session_cookie = session.cookies.get_dict()["authservice_session"]
-
-    return session_cookie
+    return session.cookies.get_dict()["authservice_session"]
 
 
 @pytest.fixture(scope="class")

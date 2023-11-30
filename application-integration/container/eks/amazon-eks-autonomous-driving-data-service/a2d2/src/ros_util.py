@@ -48,7 +48,7 @@ class RosUtil(object):
         elif data_type == 'a2d2_msgs/Bus':
             data_class = Bus
         else:
-            raise ValueError("Data type not supported:" + str(data_type))
+            raise ValueError(f"Data type not supported:{str(data_type)}")
 
         return data_class
 
@@ -208,9 +208,7 @@ class RosUtil(object):
     def transform_points_frame(cls, points=None, trans=None):
         points_hom = np.ones((points.shape[0], 4))
         points_hom[:, 0:3] = points
-        points_trans = (np.matmul(trans, points_hom.T)).T 
-    
-        return points_trans
+        return (np.matmul(trans, points_hom.T)).T
 
     @classmethod
     def parse_pcl_npz(cls, npz=None, lidar_view=None, vehicle_transform_matrix=None):

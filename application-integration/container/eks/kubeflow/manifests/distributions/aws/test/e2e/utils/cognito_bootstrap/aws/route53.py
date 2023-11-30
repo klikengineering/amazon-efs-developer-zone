@@ -77,9 +77,7 @@ class Route53HostedZone:
         UPSERT: If a record does not already exist, Amazon Web Services creates it. If a record does exist, Route 53 updates it with the values in the request.
         https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html
         """
-        resource_records = []
-        for value in record_value:
-            resource_records.append({"Value": value})
+        resource_records = [{"Value": value} for value in record_value]
         return {
             "Action": action,
             "ResourceRecordSet": {
@@ -154,11 +152,11 @@ class Route53HostedZone:
 
     def delete_hosted_zone(self):
         records = self.list_record_set()["ResourceRecordSets"]
-        change_set = []
-        for record in records:
-            if record["Type"] != "NS" and record["Type"] != "SOA":
-                change_set.append({"Action": "DELETE", "ResourceRecordSet": record})
-        if len(change_set) > 0:
+        if change_set := [
+            {"Action": "DELETE", "ResourceRecordSet": record}
+            for record in records
+            if record["Type"] not in ["NS", "SOA"]
+        ]:
             self.change_record_set(change_set)
         try:
             self.route53_client.delete_hosted_zone(Id=self.id)

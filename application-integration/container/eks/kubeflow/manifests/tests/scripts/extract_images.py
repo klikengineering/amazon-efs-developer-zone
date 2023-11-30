@@ -26,15 +26,14 @@ def image_from_string(img_str):
     digest = ""
 
     if ":" not in img_str:
-        img_str = img_str + ":latest"
+        img_str = f"{img_str}:latest"
 
     if "@" in img_str:
         name, digest = img_str.rsplit("@", 1)
     else:
         name, tag = img_str.rsplit(":", 1)
 
-    img = {"name": name, "tag": tag, "digest": digest}
-    return img
+    return {"name": name, "tag": tag, "digest": digest}
 
 
 def append_or_update(img_list, new_img):

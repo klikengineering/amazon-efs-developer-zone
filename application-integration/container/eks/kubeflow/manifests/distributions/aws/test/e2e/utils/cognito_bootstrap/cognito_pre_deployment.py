@@ -66,7 +66,7 @@ def create_certificates(
     root_certificate = None
     if root_hosted_zone:
         root_certificate = AcmCertificate(
-            domain="*." + root_hosted_zone.domain,
+            domain=f"*.{root_hosted_zone.domain}",
             hosted_zone=root_hosted_zone,
             region="us-east-1",
         )
@@ -82,7 +82,7 @@ def create_certificates(
         input("Press any key once the certificate status is ISSUED")
 
     subdomain_cert_n_virginia = AcmCertificate(
-        domain="*." + subdomain_hosted_zone.domain,
+        domain=f"*.{subdomain_hosted_zone.domain}",
         hosted_zone=subdomain_hosted_zone,
         region="us-east-1",
     )
@@ -91,7 +91,7 @@ def create_certificates(
     subdomain_cert_deployment_region = subdomain_cert_n_virginia
     if deployment_region != "us-east-1":
         subdomain_cert_deployment_region = AcmCertificate(
-            domain="*." + subdomain_hosted_zone.domain,
+            domain=f"*.{subdomain_hosted_zone.domain}",
             hosted_zone=subdomain_hosted_zone,
             region=deployment_region,
         )
@@ -113,7 +113,7 @@ def create_cognito_userpool(
     userpool_domain_cert_arn: str,
 ) -> Tuple[CustomDomainCognitoUserPool, str]:
     subdomain_name = subdomain_hosted_zone.domain
-    userpool_domain = "auth." + subdomain_name
+    userpool_domain = f"auth.{subdomain_name}"
     cognito_userpool = CustomDomainCognitoUserPool(
         userpool_name=userpool_name,
         userpool_domain=userpool_domain,
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         cfg["route53"]["rootDomain"]["certARN"] = root_certificate.arn
     cfg["route53"]["subDomain"]["us-east-1-certARN"] = subdomain_cert_n_virginia.arn
     cfg["route53"]["subDomain"][
-        deployment_region + "-certARN"
+        f"{deployment_region}-certARN"
     ] = subdomain_cert_deployment_region.arn
     utils.write_cfg(cfg)
 
